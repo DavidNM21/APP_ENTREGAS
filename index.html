@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Incidencias</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        form {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            max-width: 600px;
+            margin: 0 auto 20px;
+        }
+        label {
+            display: block;
+            margin: 10px 0 5px;
+            font-weight: bold;
+        }
+        select, input, textarea, button {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        canvas {
+            border: 1px solid #ccc;
+            background: #fff;
+            width: 100%;
+            height: 150px;
+            margin-bottom: 10px;
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        table {
+            width: 90%;
+            margin: 0 auto;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+    </style>
+    <script defer src="https://app.fastbots.ai/embed.js" data-bot-id="cm91zdmxv0dnps5k7cgzyagyy"></script>
+</head>
+<body>
+    <h1>Registro de Incidencias</h1>
+    <form id="incidenceForm">
+        <label for="folio">Folio:</label>
+        <input type="number" id="folio" required>
+
+        <label for="driver">Chofer:</label>
+        <select id="driver" required>
+            <option value="">Selecciona un chofer</option>
+            <option value="Juan Pérez">Juan Pérez</option>
+            <option value="Carlos Gómez">Carlos Gómez</option>
+            <option value="María López">María López</option>
+            <option value="Pedro Sánchez">Pedro Sánchez</option>
+        </select>
+
+        <label for="incidence">Incidencia:</label>
+        <select id="incidence" required>
+            <option value="">Selecciona una incidencia</option>
+            <option value="Cliente no presente">Cliente no presente</option>
+            <option value="Lugar inaccesible">Lugar inaccesible</option>
+            <option value="Cliente grosero">Cliente grosero</option>
+            <option value="Material dañado">Material dañado</option>
+        </select>
+
+        <label for="cash">Pagado en Efectivo:</label>
+        <input type="number" id="cash" step="0.01" min="0" placeholder="0.00">
+
+        <label for="card">Pagado en Tarjeta:</label>
+        <input type="number" id="card" step="0.01" min="0" placeholder="0.00">
+
+        <label for="transfer">Pagado en Transferencia:</label>
+        <input type="number" id="transfer" step="0.01" min="0" placeholder="0.00">
+
+        <label for="signature">Firma del Cliente:</label>
+        <canvas id="signature"></canvas>
+        <button type="button" onclick="clearSignature()">Borrar Firma</button>
+
+        <label for="comments">Comentarios:</label>
+        <textarea id="comments" rows="4" placeholder="Escribe comentarios adicionales"></textarea>
+
+        <label for="image">Imagen Adjunta (opcional):</label>
+        <input type="file" id="image" accept="image/*">
+
+        <button type="submit">Registrar Incidencia</button>
+    </form>
+
+    <table id="incidenceTable">
+        <thead>
+            <tr>
+                <th>Folio</th>
+                <th>Chofer</th>
+                <th>Incidencia</th>
+                <th>Efectivo</th>
+                <th>Tarjeta</th>
+                <th>Transferencia</th>
+                <th>Coordenadas</th>
+                <th>Hora</th>
+                <th>Comentarios</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
+
+    <script>
+        let incidences = [];
+        const form = document.getElementById('incidenceForm');
+        const tableBody = document.getElementById('tableBody');
+        const canvas = document.getElementById('signature');
+        const ctx = canvas.getContext('2d');
+        let drawing = false;
+
+        // Configurar el canvas para la firma
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+        ctx.strokeStyle = '#000';
+
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+        canvas.addEventListener('touchstart', startDrawingTouch);
+        canvas.addEventListener('touchmove', drawTouch);
+        canvas.addEventListener('touchend', stopDrawing);
+
+        function startDrawing(e) {
+            drawing = true;
+            ctx.beginPath();
+            ctx.moveTo(e.offsetX, e.offsetY);
+        }
+
+        function draw(e) {
+            if (!drawing) return;
+            ctx.lineTo(e.offsetX, e.offsetY);
+            ctx.stroke();
+        }
+
+        function stopDrawing() {
+            drawing = false;
+        }
+
+        function startDrawingTouch(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            drawing = true;
+            ctx.beginPath();
+            ctx.moveTo(touch.clientX - rect.left, touch.clientY - rect.top);
+        }
+
+        function drawTouch(e) {
+            e.preventDefault();
+            if (!drawing) return;
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            ctx.lineTo(touch.clientX - rect.left, touch.clientY - rect.top);
+            ctx.stroke();
+        }
+
+        function clearSignature() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const folio = document.getElementById('folio').value;
+            const driver = document.getElementById('driver').value;
+            const incidence = document.getElementById('incidence').value;
+            const cash = document.getElementById('cash').value || 0;
+            const card = document.getElementById('card').value || 0;
+            const transfer = document.getElementById('transfer').value || 0;
+            const comments = document.getElementById('comments').value;
+            const imageInput = document.getElementById('image').files[0];
+            const signatureData = canvas.toDataURL().split(',')[1]; // Firma en base64
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const coords = `${position.coords.latitude}, ${position.coords.longitude}`;
+                    const timestamp = new Date().toLocaleString();
+
+                    const processIncidence = (imageData = null) => {
+                        const newIncidence = {
+                            folio,
+                            driver,
+                            incidence,
+                            cash,
+                            card,
+                            transfer,
+                            coords,
+                            timestamp,
+                            comments,
+                            signature: signatureData,
+                            image: imageData ? {
+                                name: imageInput.name,
+                                data: imageData,
+                                type: imageInput.type
+                            } : null
+                        };
+                        incidences.push(newIncidence);
+                        updateTable();
+                        saveToGoogleDrive(newIncidence);
+                        form.reset();
+                        clearSignature();
+                    };
+
+                    if (imageInput) {
+                        const reader = new FileReader();
+                        reader.onload = function(event) {
+                            const imageData = event.target.result.split(',')[1];
+                            processIncidence(imageData);
+                        };
+                        reader.readAsDataURL(imageInput);
+                    } else {
+                        processIncidence();
+                    }
+                },
+                (error) => {
+                    alert('No se pudo obtener la ubicación. Habilita el GPS y recarga la página.');
+                }
+            );
+        });
+
+        function updateTable() {
+            tableBody.innerHTML = '';
+            incidences.forEach(inc => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${inc.folio}</td>
+                    <td>${inc.driver}</td>
+                    <td>${inc.incidence}</td>
+                    <td>${inc.cash}</td>
+                    <td>${inc.card}</td>
+                    <td>${inc.transfer}</td>
+                    <td>${inc.coords}</td>
+                    <td>${inc.timestamp}</td>
+                    <td>${inc.comments}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        function saveToGoogleDrive(incidence) {
+            const url = 'https://script.google.com/macros/s/AKfycbw5QeqvPKW5vgwSeGlHrXe-7sJWWV-oHuIcAdWjsEuIPfbvBVp3PL1aK2hHaX-1pLS9bQ/exec'; // Reemplaza con tu URL
+            fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(incidence),
+                mode: 'no-cors'
+            })
+            .then(() => console.log('Datos enviados a Google Drive'))
+            .catch(err => console.error('Error al enviar datos:', err));
+        }
+    </script>
+</body>
+</html>
