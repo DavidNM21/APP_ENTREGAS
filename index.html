@@ -76,7 +76,7 @@
 <body>
     <h1>Registro de Incidencias</h1>
     <form id="incidenceForm">
-        <label for="folio">Folio:</label>
+        <label for="folio" inputmode="numeric">Folio:</label>
         <input type="number" id="folio" required>
 
         <label for="driver">Chofer:</label>
@@ -98,13 +98,13 @@
         </select>
 
         <label for="cash">Pagado en Efectivo:</label>
-        <input type="number" id="cash" step="0.01" min="0" placeholder="0.00">
+        <input type="number" id="cash" step="0.01" min="0" placeholder="0.00" inputmode="numeric">
 
         <label for="card">Pagado en Tarjeta:</label>
-        <input type="number" id="card" step="0.01" min="0" placeholder="0.00">
+        <input type="number" id="card" step="0.01" min="0" placeholder="0.00" inputmode="numeric">
 
         <label for="transfer">Pagado en Transferencia:</label>
-        <input type="number" id="transfer" step="0.01" min="0" placeholder="0.00">
+        <input type="number" id="transfer" step="0.01" min="0" placeholder="0.00" inputmode="numeric">
 
         <label for="signature">Firma del Cliente:</label>
         <canvas id="signature"></canvas>
