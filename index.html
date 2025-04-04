@@ -35,13 +35,6 @@
             border-radius: 4px;
             box-sizing: border-box;
         }
-        canvas {
-            border: 1px solid #ccc;
-            background: #fff;
-            width: 100%;
-            height: 150px;
-            margin-bottom: 10px;
-        }
         button {
             background-color: #28a745;
             color: white;
@@ -70,13 +63,55 @@
         tr:nth-child(even) {
             background-color: #f9f9f9;
         }
+        /* Estilos del Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+        }
+        canvas {
+            border: 1px solid #ccc;
+            background: #fff;
+            width: 100%;
+            height: 200px;
+            margin-bottom: 10px;
+        }
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        .modal-buttons button {
+            width: auto;
+            padding: 8px 16px;
+        }
+        #clearSignature {
+            background-color: #dc3545;
+        }
+        #clearSignature:hover {
+            background-color: #c82333;
+        }
     </style>
     <script defer src="https://app.fastbots.ai/embed.js" data-bot-id="cm91zdmxv0dnps5k7cgzyagyy"></script>
 </head>
 <body>
     <h1>Registro de Incidencias</h1>
     <form id="incidenceForm">
-        <label for="folio" inputmode="numeric">Folio:</label>
+        <label for="folio">Folio:</label>
         <input type="number" id="folio" required step="1" min="100000" placeholder="000000" inputmode="numeric">
 
         <label for="driver">Chofer:</label>
@@ -98,17 +133,18 @@
         </select>
 
         <label for="cash">Pagado en Efectivo:</label>
-        <input type="number" id="cash" step="0.01" min="0" placeholder="0.00" inputmode="numeric">
+        <input type="number" id="cash" step="0.01" min="0" placeholder="0.00" inputmode="decimal">
 
         <label for="card">Pagado en Tarjeta:</label>
-        <input type="number" id="card" step="0.01" min="0" placeholder="0.00" inputmode="numeric">
+        <input type="number" id="card" step="0.01" min="0" placeholder="0.00" inputmode="decimal">
+
 
         <label for="transfer">Pagado en Transferencia:</label>
-        <input type="number" id="transfer" step="0.01" min="0" placeholder="0.00" inputmode="numeric">
+        <input type="number" id="transfer" step="0.01" min="0" placeholder="0.00" inputmode="decimal">
 
-        <label for="signature">Firma del Cliente:</label>
-        <canvas id="signature"></canvas>
-        <button type="button" onclick="clearSignature()">Borrar Firma</button>
+
+        <label>Firma del Cliente:</label>
+        <button type="button" onclick="openSignatureModal()">Firmar</button>
 
         <label for="comments">Comentarios:</label>
         <textarea id="comments" rows="4" placeholder="Escribe comentarios adicionales"></textarea>
@@ -119,19 +155,31 @@
         <button type="submit">Registrar Incidencia</button>
     </form>
 
+    <!-- Modal para la firma -->
+    <div id="signatureModal" class="modal">
+        <div class="modal-content">
+            <h2>Firma del Cliente</h2>
+            <canvas id="signature"></canvas>
+            <div class="modal-buttons">
+                <button id="clearSignature" onclick="clearSignature()">Borrar Firma</button>
+                <button onclick="saveSignature()">Guardar Firma</button>
+            </div>
+        </div>
+    </div>
+
     <table id="incidenceTable">
         <thead>
-            <tr>
-                <th>Folio</th>
-                <th style="display: none;">Chofer</th>
-                <th style="display: none;">Incidencia</th>
-                <th>Efectivo</th>
-                <th>Tarjeta</th>
-                <th>Transferencia</th>
-                <th style="display: none;">Coordenadas</th>
-                <th style="display: none;">Hora</th>
-                <th style="display: none;">Comentarios</th>
-            </tr>
+          <tr>
+              <th>Folio</th>
+              <th style="display: none;">Chofer</th>
+              <th style="display: none;">Incidencia</th>
+              <th>Efectivo</th>
+              <th>Tarjeta</th>
+              <th>Transferencia</th>
+              <th style="display: none;">Coordenadas</th>
+              <th style="display: none;">Hora</th>
+              <th style="display: none;">Comentarios</th>
+          </tr>
         </thead>
         <tbody id="tableBody"></tbody>
     </table>
@@ -140,17 +188,23 @@
         let incidences = [];
         const form = document.getElementById('incidenceForm');
         const tableBody = document.getElementById('tableBody');
+        const modal = document.getElementById('signatureModal');
         const canvas = document.getElementById('signature');
         const ctx = canvas.getContext('2d');
         let drawing = false;
+        let signatureData = null;
 
-        // Configurar el canvas para la firma
-        canvas.width = canvas.offsetWidth;
-        canvas.height = canvas.offsetHeight;
-        ctx.lineWidth = 2;
-        ctx.lineCap = 'round';
-        ctx.strokeStyle = '#000';
+        // Ajustar el tamaño del canvas dinámicamente al abrir el modal
+        function resizeCanvas() {
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = '#000';
+        }
 
+        // Eventos del canvas
         canvas.addEventListener('mousedown', startDrawing);
         canvas.addEventListener('mousemove', draw);
         canvas.addEventListener('mouseup', stopDrawing);
@@ -161,14 +215,18 @@
 
         function startDrawing(e) {
             drawing = true;
+            const rect = canvas.getBoundingClientRect();
             ctx.beginPath();
-            ctx.moveTo(e.offsetX, e.offsetY);
+            ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+            e.preventDefault();
         }
 
         function draw(e) {
             if (!drawing) return;
-            ctx.lineTo(e.offsetX, e.offsetY);
+            const rect = canvas.getBoundingClientRect();
+            ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
             ctx.stroke();
+            e.preventDefault();
         }
 
         function stopDrawing() {
@@ -193,8 +251,19 @@
             ctx.stroke();
         }
 
+        function openSignatureModal() {
+            modal.style.display = 'flex';
+            resizeCanvas(); // Ajustar el tamaño del canvas al abrir el modal
+        }
+
+        function saveSignature() {
+            signatureData = canvas.toDataURL().split(',')[1];
+            modal.style.display = 'none';
+        }
+
         function clearSignature() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            signatureData = null;
         }
 
         form.addEventListener('submit', function(e) {
@@ -208,7 +277,6 @@
             const transfer = document.getElementById('transfer').value || 0;
             const comments = document.getElementById('comments').value;
             const imageInput = document.getElementById('image').files[0];
-            const signatureData = canvas.toDataURL().split(',')[1]; // Firma en base64
 
             navigator.geolocation.getCurrentPosition(
                 (position) => {
@@ -238,6 +306,7 @@
                         saveToGoogleDrive(newIncidence);
                         form.reset();
                         clearSignature();
+                        signatureData = null;
                     };
 
                     if (imageInput) {
@@ -262,15 +331,15 @@
             incidences.forEach(inc => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${inc.folio}</td>
-                    <td style="display: none;">${inc.driver}</td>
-                    <td style="display: none;">${inc.incidence}</td>
-                    <td>${inc.cash}</td>
-                    <td>${inc.card}</td>
-                    <td>${inc.transfer}</td>
-                    <td style="display: none;">${inc.coords}</td>
-                    <td style="display: none;">${inc.timestamp}</td>
-                    <td style="display: none;">${inc.comments}</td>
+                <td>${inc.folio}</td>
+                <td style="display: none;">${inc.driver}</td>
+                <td style="display: none;">${inc.incidence}</td>
+                <td>${inc.cash}</td>
+                <td>${inc.card}</td>
+                <td>${inc.transfer}</td>
+                <td style="display: none;">${inc.coords}</td>
+                <td style="display: none;">${inc.timestamp}</td>
+                <td style="display: none;">${inc.comments}</td>
                 `;
                 tableBody.appendChild(row);
             });
