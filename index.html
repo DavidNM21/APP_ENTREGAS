@@ -263,14 +263,14 @@
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${inc.folio}</td>
-                    <td>${inc.driver}</td>
-                    <td>${inc.incidence}</td>
+                    <td style="display: none;">${inc.driver}</td>
+                    <td style="display: none;">${inc.incidence}</td>
                     <td>${inc.cash}</td>
                     <td>${inc.card}</td>
                     <td>${inc.transfer}</td>
-                    <td>${inc.coords}</td>
-                    <td>${inc.timestamp}</td>
-                    <td>${inc.comments}</td>
+                    <td style="display: none;">${inc.coords}</td>
+                    <td style="display: none;">${inc.timestamp}</td>
+                    <td style="display: none;">${inc.comments}</td>
                 `;
                 tableBody.appendChild(row);
             });
